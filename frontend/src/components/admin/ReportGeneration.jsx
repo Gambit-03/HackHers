@@ -1,21 +1,30 @@
-import axios from "axios";
+import { downloadAdminReport } from "../../services/adminService";
 
 const dummyReports = [
-  { name: "Internship Applications", id: 1 },
-  { name: "Placement Summary", id: 2 },
+  {
+    name: "Internship Applications",
+    id: "internship-applications",
+    fileName: "internship-applications-report.pdf",
+  },
+  {
+    name: "Placement Summary",
+    id: "placement-summary",
+    fileName: "placement-summary-report.pdf",
+  },
 ];
 
 export default function ReportGeneration() {
   const handleDownload = async (report) => {
     try {
-      // Replace with your API endpoint to generate/download PDF
-      const res = await axios.get(`/api/reports/${report.id}`, { responseType: 'blob' });
+      const res = await downloadAdminReport(report.id);
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${report.name}.pdf`);
+      link.setAttribute('download', report.fileName);
       document.body.appendChild(link);
       link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading report", error);
       alert("Failed to download report");

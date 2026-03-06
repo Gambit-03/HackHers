@@ -36,9 +36,102 @@ exports.login = async (req, res) => {
   // Get user
   const user = await User.findById(login.userId);
 
+  user.isLoggedIn = true;
+  user.lastLoginAt = new Date();
+  await user.save();
+
   const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-  res.json({ message: "Login successful", token, aadhaarVerified: user.aadhaarVerified, role: user.role });
+  res.json({
+    message: "Login successful",
+    token,
+    aadhaarVerified: user.aadhaarVerified,
+    role: user.role,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      dob: user.dob,
+      role: user.role,
+    },
+  });
+};
+
+// ================= CURRENT USER =================
+exports.getMe = async (req, res) => {
+  const user = await User.findById(req.user.id).select("-otp -otpExpires -__v");
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.json({ user });
+};
+
+// ================= UPDATE CURRENT USER =================
+exports.updateMe = async (req, res) => {
+  const user = await User.findById(req.user.id);
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const {
+    fullname,
+    dob,
+    email,
+    mode,
+    domain,
+    profileDetails,
+  } = req.body;
+
+  if (fullname) {
+    user.name = fullname;
+  }
+
+  if (dob) {
+    user.dob = dob;
+  }
+
+  if (email && email !== user.email) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const login = await Login.findOne({ userId: user._id });
+    if (login) {
+      login.email = email;
+      await login.save();
+    }
+
+    user.email = email;
+  }
+
+  if (!user.profile) {
+    user.profile = {};
+  }
+
+  if (domain !== undefined) {
+    user.profile.domain = domain;
+  }
+
+  if (mode !== undefined) {
+    user.profile.availability = mode;
+  }
+
+  if (profileDetails) {
+    user.profileDetails = {
+      ...(user.profileDetails?.toObject ? user.profileDetails.toObject() : user.profileDetails),
+      ...profileDetails,
+    };
+  }
+
+  await user.save();
+
+  const updatedUser = await User.findById(req.user.id).select("-otp -otpExpires -__v");
+  res.json({ message: "Profile updated successfully", user: updatedUser });
 };
 
 // ================= SEND AADHAAR OTP =================
@@ -81,4 +174,16 @@ exports.verifyAadhaarOtp = async (req, res) => {
   await user.save();
 
   res.json({ message: "Aadhaar Verified Successfully", role: user.role });
+};
+
+// ================= LOGOUT =================
+exports.logout = async (req, res) => {
+  const user = await User.findById(req.user.id);
+
+  if (user) {
+    user.isLoggedIn = false;
+    await user.save();
+  }
+
+  res.json({ message: "Logged out" });
 };

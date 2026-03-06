@@ -3,6 +3,9 @@ const { body } = require("express-validator");
 const {
   register,
   login,
+  getMe,
+  updateMe,
+  logout,
   sendAadhaarOtp,
   verifyAadhaarOtp,
 } = require("../controllers/authController");
@@ -41,5 +44,8 @@ router.post(
 // Aadhaar OTP
 router.post("/send-aadhaar-otp", protect, sendAadhaarOtp);
 router.post("/verify-aadhaar-otp", protect, verifyAadhaarOtp);
+router.get("/me", protect, getMe);
+router.put("/me", protect, updateMe);
+router.post("/logout", protect, logout);
 
 module.exports = router;

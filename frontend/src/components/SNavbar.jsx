@@ -2,8 +2,9 @@ import { useState } from "react";
 import ProfileCard from "./ProfileCard";
 import { FaUserCog, FaUser, FaFileAlt, FaClipboardList, FaAward, FaArrowRight } from "react-icons/fa";
 
-export default function SNavbar({ student }) {
+export default function SNavbar({ student, onProfileUpdated, pendingOfferCount = 0 }) {
   const [showProfile, setShowProfile] = useState(false);
+  const hasPendingOffer = pendingOfferCount > 0;
 
   return (
     <div>
@@ -20,7 +21,11 @@ export default function SNavbar({ student }) {
             <FaArrowRight className="text-secondary me-3" />
             <div className="d-flex align-items-center me-3"><FaFileAlt /> <span className="ms-1">Application</span></div>
             <FaArrowRight className="text-secondary me-3" />
-            <div className="d-flex align-items-center"><FaAward /> <span className="ms-1">Offer</span></div>
+            <div className={`d-flex align-items-center px-2 py-1 rounded ${hasPendingOffer ? "bg-success text-white" : ""}`}>
+              <FaAward />
+              <span className="ms-1">Offer</span>
+              {hasPendingOffer && <span className="badge bg-light text-success ms-2">{pendingOfferCount}</span>}
+            </div>
           </div>
 
           {/* Profile Settings Icon */}
@@ -37,6 +42,7 @@ export default function SNavbar({ student }) {
       {showProfile && (
         <ProfileCard
           student={student}
+          onProfileUpdated={onProfileUpdated}
           onClose={() => setShowProfile(false)} // <-- parent handles hide
         />
       )}

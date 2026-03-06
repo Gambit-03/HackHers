@@ -1,118 +1,45 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getAuthToken } from "../services/authService";
 
-export default function DashboardContent({ student }) {
+export default function DashboardContent({ student, onRecommendationsLoaded }) {
   const [form, setForm] = useState({
     domain: "",
     skills: "",
     mode: "remote",
-    duration: ""
+    duration: "",
+    experienceLevel: "fresher",
   });
-
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const normalize = (value) =>
-    value?.toString().trim().toLowerCase();
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log("==== USER FORM DATA ====");
-    console.log(form);
-
-    const studentSkills = form.skills
-      .split(",")
-      .map(s => normalize(s));
-
-    console.log("Normalized Student Skills:", studentSkills);
-
-    const studentDomain = normalize(form.domain);
-    const studentMode = normalize(form.mode);
-    const studentDuration = normalize(form.duration);
-
     try {
-      console.log("Fetching internships from DB...");
-      const res = await axios.get("http://localhost:5000/api/internships");
-
-      const internships = res.data;
-
-      console.log("Internships fetched from DB:", internships);
-
-      const rankedInternships = internships.map((intern) => {
-        console.log("------------");
-        console.log("Checking Internship:", intern.title);
-
-        let score = 0;
-
-        const internDomain = normalize(intern.domain);
-        const internMode = normalize(intern.mode);
-        const internDuration = normalize(intern.duration);
-        const internSkills = intern.skillsRequired.map(s =>
-          normalize(s)
-        );
-
-        console.log("Intern Domain:", internDomain);
-        console.log("Intern Mode:", internMode);
-        console.log("Intern Duration:", internDuration);
-        console.log("Intern Skills:", internSkills);
-
-        // 🔥 Domain Match (30 points)
-        if (internDomain === studentDomain) {
-          score += 30;
-          console.log("Domain matched +30");
+      setIsLoading(true);
+      const token = getAuthToken();
+      const res = await axios.post(
+        "http://localhost:5000/api/students/recommend",
+        form,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
+      );
 
-        // 🔥 Mode Match (20 points)
-        if (internMode === studentMode) {
-          score += 20;
-          console.log("Mode matched +20");
-        }
-
-        // 🔥 Duration Match (15 points)
-        if (internDuration === studentDuration) {
-          score += 15;
-          console.log("Duration matched +15");
-        }
-
-        // 🔥 Skills Match (10 per skill)
-        const matchedSkills = internSkills.filter(skill =>
-          studentSkills.includes(skill)
-        );
-
-        score += matchedSkills.length * 10;
-
-        console.log("Matched Skills:", matchedSkills);
-        console.log("Skills Score:", matchedSkills.length * 10);
-        console.log("Final Score:", score);
-
-        return {
-          ...intern,
-          score
-        };
-      });
-
-      console.log("Before Sorting:", rankedInternships);
-
-      rankedInternships.sort((a, b) => b.score - a.score);
-
-      console.log("After Sorting:", rankedInternships);
-
-      const top5 = rankedInternships.slice(0, 5);
-
-      console.log("TOP 5 INTERNSHIPS:", top5);
-
-      navigate("/dashboard/matches", {
-        state: { recommendations: top5 }
-      });
+      const top5 = res.data.topInternships || [];
+      onRecommendationsLoaded?.(top5, form);
 
     } catch (error) {
       console.error("ERROR OCCURRED:", error);
       alert("Something went wrong while processing recommendations.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -153,8 +80,19 @@ export default function DashboardContent({ student }) {
         className="form-control mb-2"
       />
 
-      <button type="submit" className="btn btn-primary w-100">
-        Get Recommendations
+      <select
+        name="experienceLevel"
+        value={form.experienceLevel}
+        onChange={handleChange}
+        className="form-select mb-2"
+      >
+        <option value="fresher">Fresher</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+      </select>
+
+      <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
+        {isLoading ? "Finding internships..." : "Get Recommendations"}
       </button>
     </form>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { registerUser } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Register() {
   // ✅ Initialize all fields
@@ -17,6 +18,8 @@ function Register() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -153,27 +156,47 @@ function Register() {
             {/* Password */}
             <div className="mb-3">
               <label className="form-label fw-semibold mb-2">Password</label>
-              <input
-                type="password"
-                className="form-control py-2"
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
+              <div className="input-group">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="form-control py-2"
+                  required
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
 
             {/* Confirm Password */}
             <div className="mb-4">
               <label className="form-label fw-semibold mb-2">Confirm Password</label>
-              <input
-                type="password"
-                className="form-control py-2"
-                required
-                value={form.confirmPassword}
-                onChange={(e) =>
-                  setForm({ ...form, confirmPassword: e.target.value })
-                }
-              />
+              <div className="input-group">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="form-control py-2"
+                  required
+                  value={form.confirmPassword}
+                  onChange={(e) =>
+                    setForm({ ...form, confirmPassword: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
 
             <button

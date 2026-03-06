@@ -1,54 +1,116 @@
-// const Internship = require("../models/Internship");
+const DUMMY_INTERNSHIPS = [
+	{
+		id: "INT-001",
+		title: "AI Research Intern",
+		company: "Innova Labs",
+		domain: "AI",
+		skillsRequired: ["python", "ml", "pytorch", "rag"],
+		availability: "offline",
+		duration: "1 year",
+		experienceLevel: "intermediate",
+		stipend: "INR 25,000/month",
+	},
+	{
+		id: "INT-002",
+		title: "Frontend Developer Intern",
+		company: "Pixel Forge",
+		domain: "Web Development",
+		skillsRequired: ["react", "javascript", "css", "html"],
+		availability: "remote",
+		duration: "6 months",
+		experienceLevel: "fresher",
+		stipend: "INR 18,000/month",
+	},
+	{
+		id: "INT-003",
+		title: "Data Analyst Intern",
+		company: "DataVista",
+		domain: "Data Science",
+		skillsRequired: ["python", "sql", "excel", "power bi"],
+		availability: "hybrid",
+		duration: "1 year",
+		experienceLevel: "fresher",
+		stipend: "INR 22,000/month",
+	},
+	{
+		id: "INT-004",
+		title: "Backend Engineering Intern",
+		company: "CloudNest",
+		domain: "Software Engineering",
+		skillsRequired: ["node.js", "express", "mongodb", "api"],
+		availability: "offline",
+		duration: "1 year",
+		experienceLevel: "intermediate",
+		stipend: "INR 28,000/month",
+	},
+	{
+		id: "INT-005",
+		title: "Computer Vision Intern",
+		company: "VisionGrid",
+		domain: "AI",
+		skillsRequired: ["python", "opencv", "pytorch", "deep learning"],
+		availability: "offline",
+		duration: "1 year",
+		experienceLevel: "advanced",
+		stipend: "INR 30,000/month",
+	},
+];
 
-// exports.getRecommendations = async (student) => {
-//   const internships = await Internship.find({});
+const normalize = (value = "") => value.toString().trim().toLowerCase();
 
-//   const results = internships.map((intern) => {
-//     let score = 0;
+const toSkillArray = (skillsInput) => {
+	if (Array.isArray(skillsInput)) {
+		return skillsInput.map((s) => normalize(s)).filter(Boolean);
+	}
 
-//     const studentSkills = student.skills.map(s => s.toLowerCase());
+	return normalize(skillsInput)
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
+};
 
-//     // 🎯 Domain Match (30)
-//     if (
-//       student.domain &&
-//       intern.domain.toLowerCase() === student.domain.toLowerCase()
-//     ) {
-//       score += 30;
-//     }
+exports.getRecommendations = (profile) => {
+	const userDomain = normalize(profile.domain);
+	const userSkills = toSkillArray(profile.skills);
+	const userAvailability = normalize(profile.availability);
+	const userDuration = normalize(profile.preferredDuration);
+	const userExperience = normalize(profile.experienceLevel);
 
-//     // 🎯 Mode Match (10)
-//     if (
-//       student.mode &&
-//       intern.mode.toLowerCase() === student.mode.toLowerCase()
-//     ) {
-//       score += 10;
-//     }
+	// 4 criteria: domain, skills, availability (mode), duration/commitment.
+	const ranked = DUMMY_INTERNSHIPS.map((internship) => {
+		const internDomain = normalize(internship.domain);
+		const internSkills = internship.skillsRequired.map((s) => normalize(s));
+		const internAvailability = normalize(internship.availability);
+		const internDuration = normalize(internship.duration);
+		const internExperience = normalize(internship.experienceLevel);
 
-//     // 🎯 Skill Match (50 max)
-//     const matchedSkills = intern.skillsRequired.filter(skill =>
-//       studentSkills.includes(skill.toLowerCase())
-//     );
+		const criteriaScores = {
+			domain: internDomain === userDomain ? 25 : 0,
+			skills: 0,
+			availability: internAvailability === userAvailability ? 25 : 0,
+			duration: internDuration === userDuration ? 25 : 0,
+		};
 
-//     const skillScore =
-//       (matchedSkills.length / intern.skillsRequired.length) * 50;
+		const matchedSkills = internSkills.filter((skill) => userSkills.includes(skill));
+		criteriaScores.skills = Math.round((matchedSkills.length / internSkills.length) * 25);
 
-//     score += skillScore;
+		// Experience acts as a tie-breaker placeholder to make ranking more realistic.
+		const experienceBonus = userExperience && userExperience === internExperience ? 5 : 0;
 
-//     // 🎯 Skill Gap
-//     const skillGap = intern.skillsRequired.filter(
-//       skill => !studentSkills.includes(skill.toLowerCase())
-//     );
+		const totalScore =
+			criteriaScores.domain +
+			criteriaScores.skills +
+			criteriaScores.availability +
+			criteriaScores.duration +
+			experienceBonus;
 
-//     return {
-//       internship: intern,
-//       score: Math.round(score),
-//       skillGap
-//     };
-//   });
+		return {
+			...internship,
+			matchedSkills,
+			criteriaScores,
+			totalScore,
+		};
+	}).sort((a, b) => b.totalScore - a.totalScore);
 
-//   // 🏆 Ranking System
-//   const ranked = results.sort((a, b) => b.score - a.score);
-
-//   // 🔥 Return Top 5
-//   return ranked.slice(0, 5);
-// };
+	return ranked;
+};

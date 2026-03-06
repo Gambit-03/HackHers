@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { loginUser } from "../services/authService";
+import { loginUser, setAuthToken } from "../services/authService";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const res = await loginUser(form);
-      localStorage.setItem("token", res.data.token);
+      setAuthToken(res.data.token);
 
       if (!res.data.aadhaarVerified) {
         navigate("/verify-aadhaar");
@@ -56,14 +58,24 @@ function Login() {
           {/* Password */}
           <div className="mb-4">
             <label className="form-label fw-semibold">Password</label>
-            <input
-              type="password"
-              className="form-control"
-              required
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-            />
+            <div className="input-group">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control"
+                required
+                onChange={(e) =>
+                  setForm({ ...form, password: e.target.value })
+                }
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="btn btn-primary w-100 fw-semibold">

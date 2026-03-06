@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getAuthToken } from "../services/authService";
 
 function AadhaarVerification() {
   const [aadhaarNumber, setAadhaarNumber] = useState("");
@@ -12,7 +13,7 @@ function AadhaarVerification() {
 
   // ... (inside AadhaarVerification component)
 
-  const token = localStorage.getItem("token"); // JWT token from login
+  const token = getAuthToken(); // JWT token from current tab session
   console.log("Current token:", token); // Add this
 
   // Send OTP handler

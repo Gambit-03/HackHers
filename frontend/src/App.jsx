@@ -27,10 +27,10 @@ import Applications from "./components/recruiter/Applications";
 
 function App() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="d-flex flex-column min-vh-100 bg-light">
       <Header />
 
-      <div className="flex-grow mt-16">
+      <main className="flex-grow-1" style={{ paddingTop: "64px" }}>
         <Routes>
 
           {/* Public routes */}
@@ -65,7 +65,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
-      </div>
+      </main>
 
       <Footer />
     </div>

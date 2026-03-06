@@ -7,6 +7,7 @@ import {
   FaIdCard
 } from "react-icons/fa";
 import Navbar from "../components/Navbar";
+import "../styles/homeCards.css";
 
 function Home() {
   const { t } = useTranslation();
@@ -63,8 +64,8 @@ function Home() {
         <div className="row g-4 mb-5">
           {eligibility.map((item, index) => (
             <div key={index} className="col-md-4 col-sm-6">
-              <div className="card h-100 shadow-sm text-center p-4 border-0">
-                <div className="display-4 text-primary mb-3">
+              <div className="card home-info-card h-100 text-center p-4 border-0">
+                <div className="display-4 text-primary mb-3 home-info-icon">
                   {item.icon}
                 </div>
                 <p className="fw-semibold">{item.text}</p>
@@ -81,8 +82,8 @@ function Home() {
         <div className="row g-4">
           {benefits.map((item, index) => (
             <div key={index} className="col-md-4 col-sm-6">
-              <div className="card h-100 shadow-sm text-center p-4 border-0">
-                <div className="display-4 text-success mb-3">
+              <div className="card home-info-card h-100 text-center p-4 border-0">
+                <div className="display-4 text-success mb-3 home-info-icon">
                   {item.icon}
                 </div>
                 <p className="fw-semibold">{item.text}</p>
@@ -92,12 +93,6 @@ function Home() {
         </div>
 
       </div>
-
-      {/* 🔵 Footer */}
-      <footer className="bg-primary text-white text-center py-4 mt-5">
-        © 2026 PM Internship Scheme | Government of India
-      </footer>
-
     </div>
   );
 }

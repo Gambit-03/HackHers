@@ -1,26 +1,53 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useNavigate } from "react-router-dom";
 import { FaTimes } from "react-icons/fa";
+import {
+  clearAuthToken,
+  logoutUser,
+  updateCurrentUser,
+} from "../services/authService";
 
-export default function ProfileCard({ student, onClose }) {
+export default function ProfileCard({ student, onClose, onProfileUpdated }) {
   const [showEdit, setShowEdit] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState({
     fullname: student.name || "",
     dob: student.dob || "",
-    place: student.place || "",
+    place: student.profileDetails?.place || "",
     resume: null,
-    domain: student.domain || "",
-    experience: student.experience || "",
-    mode: student.mode || "remote",
-    fulltime: student.fulltime || false,
+    domain: student.profile?.domain || "",
+    experience: student.profileDetails?.experience || "",
+    mode: student.profile?.availability || "remote",
+    fulltime: student.profileDetails?.fulltime || false,
     email: student.email || "",
-    degree: student.degree || "",
-    college: student.college || "",
-    year: student.year || "",
-    cgpa: student.cgpa || "",
+    degree: student.profileDetails?.degree || "",
+    college: student.profileDetails?.college || "",
+    year: student.profileDetails?.year || "",
+    cgpa: student.profileDetails?.cgpa || "",
   });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setProfileData((prev) => ({
+      ...prev,
+      fullname: student?.name || "",
+      dob: student?.dob ? new Date(student.dob).toISOString().split("T")[0] : "",
+      email: student?.email || "",
+      place: student?.profileDetails?.place || "",
+      domain: student?.profile?.domain || "",
+      experience: student?.profileDetails?.experience || "",
+      mode: student?.profile?.availability || prev.mode,
+      fulltime: student?.profileDetails?.fulltime || false,
+      degree: student?.profileDetails?.degree || "",
+      college: student?.profileDetails?.college || "",
+      year: student?.profileDetails?.year || "",
+      cgpa: student?.profileDetails?.cgpa || "",
+      resume: student?.profileDetails?.resumeName
+        ? { name: student.profileDetails.resumeName }
+        : null,
+    }));
+  }, [student]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -34,9 +61,37 @@ export default function ProfileCard({ student, onClose }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowEdit(false); // Close edit form
+
+    try {
+      setIsSaving(true);
+      const payload = {
+        fullname: profileData.fullname,
+        dob: profileData.dob,
+        email: profileData.email,
+        domain: profileData.domain,
+        mode: profileData.mode,
+        profileDetails: {
+          place: profileData.place,
+          experience: profileData.experience,
+          fulltime: profileData.fulltime,
+          degree: profileData.degree,
+          college: profileData.college,
+          year: profileData.year,
+          cgpa: profileData.cgpa,
+          resumeName: profileData.resume?.name || "",
+        },
+      };
+
+      const res = await updateCurrentUser(payload);
+      onProfileUpdated?.(res.data.user);
+      setShowEdit(false);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to save profile");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -73,7 +128,20 @@ export default function ProfileCard({ student, onClose }) {
 
             <div className="mt-3 d-flex justify-content-between">
               <button className="btn btn-primary" onClick={() => setShowEdit(true)}>Edit Profile</button>
-              <button className="btn btn-danger" onClick={() => navigate("/")}>Logout</button>
+              <button
+                className="btn btn-danger"
+                onClick={async () => {
+                  try {
+                    await logoutUser();
+                  } catch (err) {
+                    // Continue local cleanup even if backend logout fails.
+                  }
+                  clearAuthToken();
+                  navigate("/");
+                }}
+              >
+                Logout
+              </button>
             </div>
           </div>
         ) : (
@@ -103,7 +171,9 @@ export default function ProfileCard({ student, onClose }) {
             <input type="file" name="resume" className="form-control mb-3" onChange={handleChange} />
 
             <div className="d-flex justify-content-between">
-              <button type="submit" className="btn btn-success">Save</button>
+              <button type="submit" className="btn btn-success" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save"}
+              </button>
               <button type="button" className="btn btn-secondary" onClick={() => setShowEdit(false)}>Cancel</button>
             </div>
           </form>

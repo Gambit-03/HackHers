@@ -2,8 +2,9 @@ import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import InternshipCard from "../components/InternshipCard";
 import axios from "axios";
+import { getAuthToken } from "../services/authService";
 
-export default function MatchInternshipPage({ student }) {
+export default function MatchInternshipPage() {
   const location = useLocation();
   const { recommendations } = location.state || { recommendations: [] };
 
@@ -12,21 +13,26 @@ export default function MatchInternshipPage({ student }) {
 
   const handleApply = async (internship) => {
     try {
-      // 1️⃣ Show alert
+      const token = getAuthToken();
+      await axios.post(
+        "http://localhost:5000/api/students/apply",
+        {
+          internshipTitle: internship.title,
+          companyName: internship.company,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       alert(`Applied to ${internship.title}`);
-
-      // 2️⃣ Remove internship from UI
       setInternships(prev => prev.filter(item => item.title !== internship.title));
-
-      // 3️⃣ Save to database
-      await axios.post("/api/appliedInternships", {
-        studentId: student.id,     // or student._id
-        internshipId: internship.title, // or a unique id if you have it
-      });
 
     } catch (error) {
       console.error("Error applying:", error);
-      alert("Something went wrong while applying. Try again!");
+      alert(error.response?.data?.message || "Something went wrong while applying. Try again!");
     }
   };
 
